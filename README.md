@@ -1,7 +1,7 @@
 # KTU Notification Bot
 [The bot]() that scrapes [KTU Website](https://ktu.edu.in/eu/core/announcements.htm) and publish new post at [KTU Notifications](https://t.me/KTU_RC/) telegram channel. Consider placing a :star: for this repo :smile: .
 
-###Disclaimer
+### Disclaimer
 Polling fequently can harm the site, and consume bandwidth of the original site.
 
 ## Install & Development 
