@@ -107,6 +107,10 @@ def send_notification(notification, link_list4):
                         reply_markup=InlineKeyboardMarkup(build_menu(link_list4, n_cols=2)),
                         disable_web_page_preview=True)
         log("Message Sent")
+    except telegram.error.BadRequest as e:
+        bot.send_message(chat_id=PRIVATE_ID, text= e.message + "\n\n `" + notification + "`",
+                    parse_mode=telegram.ParseMode.MARKDOWN)
+        log(e.message)
 
 def find_links(links, body):
     link_list = [InlineKeyboardButton("Quick Navigation Panel", url=quick_notification_link)]
