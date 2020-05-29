@@ -8,25 +8,23 @@ import telegram
 import urllib.parse
 from bs4 import BeautifulSoup, Comment
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-# ___________ CONFIG AREA ________________
+import re
+# __________________________ CONFIG AREA _______________________
 
-# This will prevent sending messages to channel during development
-debug = True
-# Time  delay it will wake and and check....
-sleep_time =300 #seconds
+debug = True                                                             # This will prevent sending messages to channel during development
+sleep_time =300 #seconds.                                                # Time  delay it will wake and and check for new notification
 
-quick_notification_link = "https://t.me/KTU_RC/14"
-add_url = "https://ktu.edu.in"
-url = "https://ktu.edu.in/eu/core/announcements.htm"
+# Whatsapp forward message
+header = "🔈 "
+footer2 =  ".\n ------------------------- \nShared from *KTU Notification Channel*"\
+    " \n👉 Join Now!  https://t.me/KTU_RC \n⚡️ *No Ads* \n🔸 *Share to your friends* "
 
-# Header footer shown for whatsapp link
-header = " 📢 New *KTU* Notification: \n"
-footer2 =  ".\n ------------------------- \n  Countinue reading: *KTU Notification Channel* \n  👉 Join Now!  https://t.me/KTU_RC  \n*Share to your friends* "
+# Telegram Message
+footer =  "---\n 👉 Join: https://t.me/KTU\\_RC \n🔸 No Ads⚡️"
+button_text  = "Visit KTU 🌐"                                               
+button_link = "https://ktu.edu.in/eu/core/announcements.htm" 
 
-# Footer shown for Other messages
-footer =  "\n ------------------------- \n "
-
-# --------------END OF CONFIG--------------------
+# _________________________  END OF CONFIG _________________________
 
 # todo : Implemnt a error detection and report system
 error_val = ""
@@ -37,6 +35,8 @@ PRIVATE_ID = os.environ['PRIVATE_ID']
 DATABASE_URL = os.environ['DATABASE_URL']
 STATUS = os.environ['STATUS']
 
+add_url = "https://ktu.edu.in"
+url = "https://ktu.edu.in/eu/core/announcements.htm"
 
 try:
 	if "DEBUG" in STATUS:
@@ -63,13 +63,17 @@ def getlist(cur):
     return data
 
 def save_msg_hash(listi,conn,cur):
-	log("Saving")
-	if listi != None or len(listi)>2:
-		cur.execute("delete from hashes;")
-		for hasyh in listi:
-			cur.execute("INSERT INTO hashes VALUES (%s)", (hasyh, ))
-			conn.commit()
-	log("Saved")
+    log("Saving :" + str(listi))
+    if debug:
+        cur.execute("delete FROM hashes;")
+        for hash_val in listi:
+            cur.execute("INSERT INTO hashes VALUES (%s)", (hash_val, ))
+            conn.commit()
+    else:
+        if listi != None:
+            cur.execute("INSERT INTO hashes VALUES (%s)", (listi, ))
+            conn.commit()
+    log("Saved")
 
 def convert(tip):
 	data =[]
@@ -85,46 +89,61 @@ def build_menu(buttons, n_cols):
     menu = [buttons[sd:sd + n_cols] for sd in range(0, len(buttons), n_cols)]
     return menu
 
-def send_notification(notification, link_list4):
+def send_notification(notification, link_list4, enable_preview_i):
+    disable_preview = False
+    if enable_preview_i is None:
+        disable_preview = True
+        enable_preview_i = " "
     try:
         if debug:
-            bot.send_message(chat_id=PRIVATE_ID, text= notification,
+            bot.send_message(chat_id=PRIVATE_ID, text= notification + enable_preview_i + footer,
                      reply_markup=InlineKeyboardMarkup(build_menu(link_list4, n_cols=2)),
-                     disable_web_page_preview=True, parse_mode=telegram.ParseMode.MARKDOWN)
+                     disable_web_page_preview=disable_preview, parse_mode=telegram.ParseMode.MARKDOWN)
         if not debug:
-            bot.send_message(chat_id=CHANNEL_ID , text=notification, parse_mode=telegram.ParseMode.MARKDOWN,
+            bot.send_message(chat_id=CHANNEL_ID , text=notification + enable_preview_i + footer, parse_mode=telegram.ParseMode.MARKDOWN,
                         reply_markup=InlineKeyboardMarkup(build_menu(link_list4, n_cols=2)),
-                        disable_web_page_preview=True)
+                        disable_web_page_preview=disable_preview)
         log("Message Sent")
-    except telegram.error.TimedOut as e:
+        return True
+    except telegram.error.TimedOut:
         log("Timeout trying again")
         if debug:
-            bot.send_message(chat_id=PRIVATE_ID, text= notification,
+            bot.send_message(chat_id=PRIVATE_ID, text= notification  + enable_preview_i + footer,
                      reply_markup=InlineKeyboardMarkup(build_menu(link_list4, n_cols=2)),
-                     disable_web_page_preview=True, parse_mode=telegram.ParseMode.MARKDOWN)
+                     disable_web_page_preview=disable_preview, parse_mode=telegram.ParseMode.MARKDOWN)
         if not debug:
-            bot.send_message(chat_id=CHANNEL_ID , text=notification, parse_mode=telegram.ParseMode.MARKDOWN,
+            bot.send_message(chat_id=CHANNEL_ID , text=notification  + enable_preview_i + footer, parse_mode=telegram.ParseMode.MARKDOWN,
                         reply_markup=InlineKeyboardMarkup(build_menu(link_list4, n_cols=2)),
-                        disable_web_page_preview=True)
+                        disable_web_page_preview=disable_preview)
         log("Message Sent")
+        return True
     except telegram.error.BadRequest as e:
-        bot.send_message(chat_id=PRIVATE_ID, text= e.message + "\n\n `" + notification + "`",
+        bot.send_message(chat_id=PRIVATE_ID, text= e.message ,
+                    parse_mode=telegram.ParseMode.MARKDOWN)
+        bot.send_message(chat_id=PRIVATE_ID, text= "\n\n `" + notification  + enable_preview_i + footer + "`" ,
                     parse_mode=telegram.ParseMode.MARKDOWN)
         log(e.message)
+        return False
 
 def find_links(links, body):
-    link_list = [InlineKeyboardButton("Quick Navigation Panel", url=quick_notification_link)]
+    link_list = [InlineKeyboardButton(button_text, url=button_link)]
     for link in links:
         body = remove_last(body, link.text, "", 1)
-        if "ktu.edu" in link["href"]:
+        if "ktu.edu" in link["href"] or "http" in link["href"][:10] or "www." in link["href"]:
             temp_link = link["href"]
         else:
             temp_link = add_url + link["href"]
         link_list.append(InlineKeyboardButton(link.text, url=temp_link))
     return body,link_list
 
+def get_first_pdf_link(links):
+    if links is not None:
+        for link in links:
+            if ".pdf" in link["url"]:
+                return link["url"]
+    return None
+
 def main_function(conn,cur):
-    msg_list = []
     hash_list = getlist(cur)
     log("Connecting to website")
     try:
@@ -146,6 +165,7 @@ def main_function(conn,cur):
     all_notification = soup.findAll('tr')
 
     i = 0
+    msg_hash_list =[]
     for item in all_notification:
         contents = item.findAll('li')
 
@@ -157,10 +177,12 @@ def main_function(conn,cur):
                 .replace("<p>","\n")\
                     .replace("</p>","")\
                         .replace("<b>","*")\
-                            .replace("</b>","*\n")\
+                            .replace("</b>","*\n\n")\
                                 .replace("[","")\
                                     .replace("]","")\
                                         .replace("_", "\\_")
+                                        
+                           
                                    
         temmmm=  BeautifulSoup(contents,'html.parser')   
         body = ""                                  
@@ -168,64 +190,63 @@ def main_function(conn,cur):
             body = body +  x
         body , links = find_links(item.findAll('a', href=True), body=body)
         body = body.replace("**","").strip()
+        body = re.sub('\n+','\n',body)
         links.append(InlineKeyboardButton("WhatsApp It!", "https://api.whatsapp.com/send?&text=" + urllib.parse.quote(
-            body +  footer2)))
-    
-        if i < 5:
+            header + body +  footer2)))
+        pdf_link = get_first_pdf_link(links)
+        footer_pdf = None
+        if pdf_link is not None:
+            footer_pdf  = "\n\n[-]("+pdf_link+")" 
+        if i < 10:
             msg_hash = (hashlib.md5(body.encode('utf-8')).hexdigest())
-            msg_list.append(msg_hash)
             if not debug:
             	if not msg_hash in hash_list:
-                	send_notification(body + footer, links)
+                    send_notification(header + body, links, footer_pdf)
+                    save_msg_hash(msg_hash,conn,cur)
             if debug:
-                	send_notification(body + footer, links)
+                if not send_notification(header + body, links, footer_pdf):
+                    log("Message will not be sent")
+                msg_hash_list.append(msg_hash)
         else:
             break
         i = i + 1
-    save_msg_hash(msg_list,conn,cur)
+    if debug:
+        save_msg_hash(msg_hash_list,conn,cur)
+    
 
 def main():
-	if not debug:
-		while True:
-			try:
-				log("Scanning for new")
-				log("cinnecting to DB" )
-				conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-				cur = conn.cursor()
-				log("Loading function")
-				main_function(conn,cur)
-				log("Closing DB")
-				cur.close()
-				conn.close()
-				log("Scan complete")
-				time.sleep(sleep_time)
-				error_val = ""
-			except Exception as e:
-				try:
-					bot.send_message(chat_id=PRIVATE_ID, text="*Error* : `" + e + "`", disable_notification=False,
-                         parse_mode=telegram.ParseMode.MARKDOWN, disable_web_page_preview=True)
-				except e:
-					pass
-				log("Exception Occurred:" + e)
-				time.sleep(sleep_time)
-	else:
-		conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-		cur = conn.cursor()
-		main_function(conn,cur)
-		try:
-			cur.close()
-			conn.close()
-		except e:
-			log("Already closed")
+    if not debug:
+        while True:
+            log("Scanning for new")
+            log("connecting to DB" )
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+            cur = conn.cursor()
+            log("Loading function")
+            main_function(conn,cur)
+            log("Closing DB")
+            cur.close()
+            conn.close()
+            log("Scan complete")
+            time.sleep(sleep_time)            
+    else:
+        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+        cur = conn.cursor()
+        main_function(conn,cur)
+        try:
+            cur.close()
+            conn.close()
+        except:
+            log("Already closed")
 
 
 if __name__ == '__main__':
-	try:
-		if debug:
-			log("Debug mode")
-		main()
-		
-	except e:
-		log("main failed" + e)
-		pass
-
+    if not debug:
+        try:
+            main()
+        except Exception as e :
+            log("main failed " + str(e))
+            pass
+    if debug:
+        log("Debug mode")
+        main()
+        
