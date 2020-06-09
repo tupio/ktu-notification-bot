@@ -1,4 +1,10 @@
 # KTU Notification Bot
+
+[![GitHub issues](https://img.shields.io/github/issues/tupio/ktu-notification-bot)](https://github.com/tupio/ktu-notification-bot/issues)
+[![GitHub forks](https://img.shields.io/github/forks/tupio/ktu-notification-bot)](https://github.com/tupio/ktu-notification-bot/network)
+[![GitHub stars](https://img.shields.io/github/stars/tupio/ktu-notification-bot)](https://github.com/tupio/ktu-notification-bot/stargazers)
+[![GitHub license](https://img.shields.io/github/license/tupio/ktu-notification-bot)](https://github.com/tupio/ktu-notification-bot/blob/master/LICENSE)
+
 [This bot]() scrapes [KTU Website](https://ktu.edu.in/eu/core/announcements.htm) and publishes a new post at [KTU Notifications](https://t.me/KTU_RC/) telegram channel.
 
 > Consider placing a :star: for this repo :smile:.
@@ -13,6 +19,7 @@ Links:
 * [KTU Notifications](https://t.me/KTU_RC) This is maintained by me and contains no Ads.
 * [KTU Official Notification System](https://t.me/apjktustudents)
 * [Ktu study materials](http://t.me/ktustudymaterials)
+
 
 ### Disclaimer
 Polling frequently can harm the site, and consume bandwidth of the original site.
