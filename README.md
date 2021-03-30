@@ -13,7 +13,7 @@
 
 Instances: **3(known)** 
 
-Total Subscriber Count: **17500+**
+Total Subscriber Count including derivatives: **17500+**
 
 Links:
 * [KTU Notifications](https://t.me/KTU_RC) This is maintained by me and contains no Ads.
