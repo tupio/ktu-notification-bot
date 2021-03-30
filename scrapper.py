@@ -21,17 +21,17 @@
 # SOFTWARE.
 
 
+import os
+import re
+import json
 import time
 import hashlib
 import requests
 import psycopg2
-import os
-import json
 import telegram
 import urllib.parse
 from bs4 import BeautifulSoup, Comment
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-import re
 # __________________________ CONFIG AREA _______________________
 
 # This will prevent sending messages to channel during development
@@ -51,7 +51,7 @@ button_link = "https://ktu.edu.in/eu/core/announcements.htm"
 
 # _________________________  END OF CONFIG _________________________
 
-# todo : Implemnt a error detection and report system
+# TODO : Implemnt a error detection and report system
 error_val = ""
 
 bot = telegram.Bot(token=os.environ['BOT_ID'])
@@ -105,21 +105,21 @@ def save_msg_hash(hashes, conn, cur):
     log("Saved")
 
 
-# converts result tuples into a dict
 def convert_to_list(tip):
+# converts result tuples into a dict
     data = []
     for x in tip:
         data.append(x[0])
     return data
 
 
-# removes link text from the bottom position since it will be added as buttons
 def remove_last(s, old, new, occurrence):
+# removes link text from the bottom position since it will be added as buttons
     li = s.rsplit(old, occurrence)
     return new.join(li)
 
-# Builds the button menu for links
 def build_menu(buttons, n_cols):
+# Builds the button menu for links
     menu = [buttons[sd:sd + n_cols] for sd in range(0, len(buttons), n_cols)]
     return menu
 
@@ -207,7 +207,7 @@ def fetcher(conn, cur):
             .replace("<p>", "\n")\
             .replace("</p>", "")\
             .replace("<b>", "*")\
-            .replace("</b>", "*\n\n")\
+            .replace("</b>", "*#\n\n")\
             .replace("[", "")\
             .replace("]", "")\
             .replace("_", "\\_")
@@ -215,9 +215,11 @@ def fetcher(conn, cur):
         souped = BeautifulSoup(contents, 'html.parser')
         body = ""
         for x in souped.find("li").findAll(text=True):
+            x=str(x).replace("\r", "").replace("\t","").replace("\n","")
+            x = re.sub(' +',' ',x)
             body = body + x
         body, links = find_links(item.findAll('a', href=True), body=body)
-        body = body.replace("**", "").strip()
+        body = body.replace("**", "").replace("#","\n").strip()
         body = re.sub('\n+', '\n', body)
         links.append(InlineKeyboardButton("WhatsApp It!", "https://api.whatsapp.com/send?&text=" + urllib.parse.quote(
             wa_header + body + wa_footer)))
@@ -270,7 +272,6 @@ if __name__ == '__main__':
             main()
         except Exception as e:
             log("main failed " + str(e))
-            pass
     if debug:
         log("Debug mode")
         main()
