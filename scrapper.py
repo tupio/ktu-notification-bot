@@ -54,9 +54,9 @@ button_link = "https://ktu.edu.in/eu/core/announcements.htm"
 # TODO : Implemnt a error detection and report system
 error_val = ""
 
-bot = telegram.Bot(token=os.environ['BOT_ID'])
-CHANNEL_ID = os.environ['CHANNEL_ID']
-PRIVATE_ID = os.environ['PRIVATE_ID']
+bot = telegram.Bot(token=os.environ['2145285286:AAHg82FlEBh4rFPTx1TuOFj4QhuEcUp-ygY'])
+CHANNEL_ID = os.environ['807251865']
+PRIVATE_ID = os.environ['807251865']
 DATABASE_URL = os.environ['DATABASE_URL']
 STATUS = os.environ['STATUS']
 
